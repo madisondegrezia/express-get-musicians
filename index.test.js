@@ -17,7 +17,8 @@ describe("./musicians endpoint", () => {
     expect(response.statusCode).toBe(200);
     expect(response.body.length).toBeGreaterThan(0);
     // checking accuracy for first musician in array
-    const firstMusician = response.body[0];
+    const responseData = JSON.parse(response.text);
+    const firstMusician = responseData[0];
     expect(firstMusician).toHaveProperty("id");
     expect(firstMusician.name).toBe("Mick Jagger");
     expect(firstMusician.instrument).toBe("Voice");
