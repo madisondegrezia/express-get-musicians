@@ -10,6 +10,7 @@ const app = require("./src/app");
 const { seedMusician } = require("./seedData");
 
 describe("./musicians endpoint", () => {
+  let musicianId;
   //Write your tests here
   test("Testing /musicians endpoint", async () => {
     // Sends request to `/musicians` endpoint
