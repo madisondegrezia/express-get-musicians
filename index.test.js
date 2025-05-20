@@ -64,6 +64,61 @@ describe("./musicians endpoint", () => {
     expect(response.body.error).toBe("Musician not found");
   });
 
+  test("Post a new musician", async () => {
+    const newMusician = {
+      name: "Adam Levine",
+      instrument: "Voice",
+    };
+    // Sends request to `/musicians` endpoint
+    const response = await request(app).post("/musicians").send(newMusician);
+    musicianId = response.body.id; // save ID for later tests
+    expect(response.statusCode).toEqual(201);
+    expect(response.body.name).toEqual("Adam Levine");
+    expect(response.body).toEqual(expect.objectContaining(newMusician));
+  });
+
+  test("Update a new musician", async () => {
+    const updateMusician = {
+      instrument: "Guitar",
+    };
+    // Sends request to `/musicians` endpoint
+    const response = await request(app)
+      .put(`/musicians/${musicianId}`)
+      .send(updateMusician);
+    expect(response.statusCode).toEqual(200);
+    expect(response.body.instrument).toEqual("Guitar");
+    expect(response.body).toEqual(expect.objectContaining(updateMusician));
+  });
+
+  test("Update musician that does not exist", async () => {
+    const updateMusician = {
+      instrument: "Guitar",
+    };
+    // Sends request to `/musicians` endpoint
+    const response = await request(app)
+      .put("/musicians/962")
+      .send(updateMusician);
+    expect(response.statusCode).toEqual(404);
+    expect(response.body.error).toEqual("Musician not found");
+  });
+
+  test("Delete a musician", async () => {
+    // Sends request to `/musicians` endpoint
+    const response = await request(app).delete(`/musicians/${musicianId}`);
+    expect(response.statusCode).toEqual(200);
+
+    // verify that deleted entry is not accessible
+    const getDeletedMus = await request(app).get(`/musicians/${musicianId}`);
+    expect(getDeletedMus.statusCode).toEqual(404);
+  });
+
+  test("Delete musician that does not exist", async () => {
+    // Sends request to `/musicians` endpoint
+    const response = await request(app).delete("/musicians/962");
+    expect(response.statusCode).toEqual(404);
+    expect(response.body.error).toEqual("Musician not found");
+  });
+
   test("Testing Bands endpoint", async () => {
     // Sends request to `/musicians` endpoint
     const response = await request(app).get("/bands");
