@@ -5,9 +5,31 @@ execSync("npm run seed");
 
 const request = require("supertest");
 const { db } = require("./db/connection");
-const { Musician } = require("./models/index");
+const { Musician, Band } = require("./models/index");
 const app = require("./src/app");
 const { seedMusician } = require("./seedData");
+
+beforeAll(async () => {
+  await db.sync({ force: true });
+
+  const bands = await Band.bulkCreate([
+    { name: "The Beatles", genre: "Rock" },
+    { name: "Maroon 5", genre: "Rock" },
+    { name: "Coldplay", genre: "Rock" },
+  ]);
+  await Musician.bulkCreate([
+    { name: "Mick Jagger", instrument: "Voice" },
+    { name: "Adam Levine", instrument: "Voice", bandId: bands[1].id },
+    { name: "John Lennon", instrument: "Guitar", bandId: bands[0].id },
+    { name: "Paul McCartney", instrument: "Bass guitar", bandId: bands[0].id },
+    { name: "Ringo Starr", instrument: "Drums", bandId: bands[0].id },
+    { name: "Chris Martin", instrument: "Voice", bandId: bands[2].id },
+  ]);
+});
+
+afterAll(async () => {
+  await db.close();
+});
 
 describe("./musicians endpoint", () => {
   let musicianId;
@@ -43,7 +65,7 @@ describe("./musicians endpoint", () => {
     // checking accuracy for second musician in array
     const secondMusician = response.body;
     expect(secondMusician).toHaveProperty("id");
-    expect(secondMusician.name).toBe("Drake");
+    expect(secondMusician.name).toBe("Adam Levine");
     expect(secondMusician.instrument).toBe("Voice");
   });
 
@@ -54,27 +76,27 @@ describe("./musicians endpoint", () => {
     // checking accuracy for third musician in array
     const firstMusician = response.body;
     expect(firstMusician).toHaveProperty("id");
-    expect(firstMusician.name).toBe("Jimi Hendrix");
+    expect(firstMusician.name).toBe("John Lennon");
     expect(firstMusician.instrument).toBe("Guitar");
   });
 
   test("Returns error if musician not found", async () => {
     // Sends request to `/musicians` endpoint
-    const response = await request(app).get("/musicians/4");
+    const response = await request(app).get("/musicians/100");
     expect(response.statusCode).toBe(404);
     expect(response.body.error).toBe("Musician not found");
   });
 
   test("Post a new musician", async () => {
     const newMusician = {
-      name: "Adam Levine",
+      name: "Harry Styles",
       instrument: "Voice",
     };
     // Sends request to `/musicians` endpoint
     const response = await request(app).post("/musicians").send(newMusician);
     musicianId = response.body.id; // save ID for later tests
     expect(response.statusCode).toEqual(201);
-    expect(response.body.name).toEqual("Adam Levine");
+    expect(response.body.name).toEqual("Harry Styles");
     expect(response.body).toEqual(expect.objectContaining(newMusician));
   });
 
@@ -119,7 +141,9 @@ describe("./musicians endpoint", () => {
     expect(response.statusCode).toEqual(404);
     expect(response.body.error).toEqual("Musician not found");
   });
+});
 
+describe("./bands endpoint", () => {
   test("Testing Bands endpoint", async () => {
     // Sends request to `/musicians` endpoint
     const response = await request(app).get("/bands");
@@ -130,5 +154,20 @@ describe("./musicians endpoint", () => {
     expect(firstBand).toHaveProperty("id");
     expect(firstBand.name).toBe("The Beatles");
     expect(firstBand.genre).toBe("Rock");
+  });
+
+  test("get /bands should return bands with their associated musicians", async () => {
+    const response = await request(app).get("/bands");
+    expect(response.statusCode).toBe(200);
+    //console.log(response.body[2].musicians);
+    expect(response.body[0].musicians.length).toEqual(3);
+    expect(response.body[1].musicians.length).toEqual(1);
+    expect(response.body[2].musicians.length).toEqual(1);
+  });
+
+  test("get /bands/:id should return band with its associated musicians", async () => {
+    const response = await request(app).get("/bands/1");
+    expect(response.statusCode).toBe(200);
+    expect(response.body.musicians.length).toEqual(3);
   });
 });
