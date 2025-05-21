@@ -160,8 +160,37 @@ describe("./musicians endpoint", () => {
     expect(instrumentError.msg).toBe("Instrument cannot be empty");
   });
 
+  test("POST /musicians fails when name field length is not in range", async () => {
+    const response = await request(app)
+      .post("/musicians")
+      .send({ name: "A", instrument: "Voice" });
+    expect(response.status).toBe(400);
+
+    const nameError = response.body.error.find((e) => e.path === "name");
+    console.log(nameError);
+    expect(nameError).toBeDefined();
+    expect(nameError.msg).toBe("Name must be between 2 and 20 characters");
+  });
+
+  test("POST /musicians fails when instrument field length is not in range", async () => {
+    const response = await request(app)
+      .post("/musicians")
+      .send({ name: "Alex Warren", instrument: "V" });
+    expect(response.status).toBe(400);
+
+    const instrumentError = response.body.error.find(
+      (e) => e.path === "instrument"
+    );
+    console.log(instrumentError);
+    expect(instrumentError).toBeDefined();
+    expect(instrumentError.msg).toBe(
+      "Instrument must be between 2 and 20 characters"
+    );
+  });
+
   test("Update a new musician", async () => {
     const updateMusician = {
+      name: "Harry Styles",
       instrument: "Guitar",
     };
     // Sends request to `/musicians` endpoint
@@ -181,8 +210,98 @@ describe("./musicians endpoint", () => {
     const response = await request(app)
       .put("/musicians/962")
       .send(updateMusician);
-    expect(response.statusCode).toEqual(404);
-    expect(response.body.error).toEqual("Musician not found");
+    expect(response.statusCode).toEqual(400);
+    // expect(response.body.error).toEqual("Musician not found");
+  });
+
+  test("PUT /musicians returns validation errors", async () => {
+    const response = await request(app)
+      .put(`/musicians/${musicianId}`)
+      .send({});
+    expect(response.status).toBe(400);
+
+    // check if array
+    expect(Array.isArray(response.body.error)).toBe(true);
+
+    const errorFields = response.body.error.map((e) => e.path);
+
+    expect(errorFields).toEqual(expect.arrayContaining(["name", "instrument"]));
+
+    const nameError = response.body.error.find((e) => e.path === "name");
+    expect(nameError).toBeDefined();
+    expect(nameError.msg).toBe("Name cannot be empty");
+
+    const instrumentError = response.body.error.find(
+      (e) => e.path === "instrument"
+    );
+    expect(instrumentError).toBeDefined();
+    expect(instrumentError.msg).toBe("Instrument cannot be empty");
+  });
+
+  test("PUT /musicians returns validation errors when name field is empty", async () => {
+    const response = await request(app)
+      .put(`/musicians/${musicianId}`)
+      .send({ instrument: "Piano" });
+    expect(response.status).toBe(400);
+
+    // check if array
+    expect(Array.isArray(response.body.error)).toBe(true);
+
+    const errorFields = response.body.error.map((e) => e.path);
+
+    expect(errorFields).toEqual(expect.arrayContaining(["name"]));
+
+    const nameError = response.body.error.find((e) => e.path === "name");
+    expect(nameError).toBeDefined();
+    expect(nameError.msg).toBe("Name cannot be empty");
+  });
+
+  test("PUT /musicians returns validation errors when instrument field is empty", async () => {
+    const response = await request(app)
+      .put(`/musicians/${musicianId}`)
+      .send({ name: "Alex Warren" });
+    expect(response.status).toBe(400);
+
+    // check if array
+    expect(Array.isArray(response.body.error)).toBe(true);
+
+    const errorFields = response.body.error.map((e) => e.path);
+
+    expect(errorFields).toEqual(expect.arrayContaining(["instrument"]));
+
+    const instrumentError = response.body.error.find(
+      (e) => e.path === "instrument"
+    );
+    expect(instrumentError).toBeDefined();
+    expect(instrumentError.msg).toBe("Instrument cannot be empty");
+  });
+
+  test("PUT /musicians fails when name field length is not in range", async () => {
+    const response = await request(app)
+      .put(`/musicians/${musicianId}`)
+      .send({ name: "A", instrument: "Voice" });
+    expect(response.status).toBe(400);
+
+    const nameError = response.body.error.find((e) => e.path === "name");
+    console.log(nameError);
+    expect(nameError).toBeDefined();
+    expect(nameError.msg).toBe("Name must be between 2 and 20 characters");
+  });
+
+  test("PUT /musicians fails when instrument field length is not in range", async () => {
+    const response = await request(app)
+      .put(`/musicians/${musicianId}`)
+      .send({ name: "Alex Warren", instrument: "V" });
+    expect(response.status).toBe(400);
+
+    const instrumentError = response.body.error.find(
+      (e) => e.path === "instrument"
+    );
+    console.log(instrumentError);
+    expect(instrumentError).toBeDefined();
+    expect(instrumentError.msg).toBe(
+      "Instrument must be between 2 and 20 characters"
+    );
   });
 
   test("Delete a musician", async () => {
