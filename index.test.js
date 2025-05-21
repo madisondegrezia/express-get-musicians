@@ -100,6 +100,66 @@ describe("./musicians endpoint", () => {
     expect(response.body).toEqual(expect.objectContaining(newMusician));
   });
 
+  test("POST /musicians returns validation errors", async () => {
+    const response = await request(app).post("/musicians").send({});
+    expect(response.status).toBe(400);
+
+    // check if array
+    expect(Array.isArray(response.body.error)).toBe(true);
+
+    const errorFields = response.body.error.map((e) => e.path);
+
+    expect(errorFields).toEqual(expect.arrayContaining(["name", "instrument"]));
+
+    const nameError = response.body.error.find((e) => e.path === "name");
+    expect(nameError).toBeDefined();
+    expect(nameError.msg).toBe("Name cannot be empty");
+
+    const instrumentError = response.body.error.find(
+      (e) => e.path === "instrument"
+    );
+    expect(instrumentError).toBeDefined();
+    expect(instrumentError.msg).toBe("Instrument cannot be empty");
+  });
+
+  test("POST /musicians returns validation errors when name field is empty", async () => {
+    const response = await request(app)
+      .post("/musicians")
+      .send({ instrument: "Piano" });
+    expect(response.status).toBe(400);
+
+    // check if array
+    expect(Array.isArray(response.body.error)).toBe(true);
+
+    const errorFields = response.body.error.map((e) => e.path);
+
+    expect(errorFields).toEqual(expect.arrayContaining(["name"]));
+
+    const nameError = response.body.error.find((e) => e.path === "name");
+    expect(nameError).toBeDefined();
+    expect(nameError.msg).toBe("Name cannot be empty");
+  });
+
+  test("POST /musicians returns validation errors when instrument field is empty", async () => {
+    const response = await request(app)
+      .post("/musicians")
+      .send({ name: "Alex Warren" });
+    expect(response.status).toBe(400);
+
+    // check if array
+    expect(Array.isArray(response.body.error)).toBe(true);
+
+    const errorFields = response.body.error.map((e) => e.path);
+
+    expect(errorFields).toEqual(expect.arrayContaining(["instrument"]));
+
+    const instrumentError = response.body.error.find(
+      (e) => e.path === "instrument"
+    );
+    expect(instrumentError).toBeDefined();
+    expect(instrumentError.msg).toBe("Instrument cannot be empty");
+  });
+
   test("Update a new musician", async () => {
     const updateMusician = {
       instrument: "Guitar",
